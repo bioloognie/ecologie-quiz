@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koolstofkringloop — interactief Binas-schema</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;font-size:13px;color:#1a1a18;background:#f5f5f2;padding:1rem}
+.wrap{max-width:740px;margin:0 auto}
+h1{font-size:16px;font-weight:500;margin-bottom:10px;color:#1a1a18}
+.topbar{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.level-btn{padding:4px 12px;border-radius:6px;border:1px solid #ccc;background:transparent;font-size:12px;cursor:pointer;font-family:inherit;color:#1a1a18;transition:all .15s}
+.level-btn.active{background:#2d6a2d;color:#fff;border-color:#2d6a2d}
+.stepbar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.step-btn{padding:5px 14px;border-radius:6px;border:1px solid #ccc;background:#fff;font-size:12px;cursor:pointer;font-family:inherit;color:#1a1a18}
+.step-btn:hover{background:#f0f0ec}
+.step-label{font-size:11px;color:#666;flex:1;text-align:center}
+.step-dots{display:flex;gap:4px;align-items:center}
+.sdot{width:8px;height:8px;border-radius:50%;background:#ddd;transition:background .2s}
+.sdot.done{background:#2d6a2d}
+.sdot.cur{background:#F5A623}
+.info-panel{margin-top:8px;background:#fff;border:1px solid #e0e0da;border-radius:10px;padding:12px 14px;min-height:72px;transition:opacity .2s}
+.info-level{display:inline-block;font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:4px;margin-bottom:4px}
+.info-level.havo{background:#e8f5e9;color:#2d6a2d}
+.info-level.vwo{background:#e3f2fd;color:#1565c0}
+.info-title{font-size:14px;font-weight:500;margin-bottom:3px}
+.info-text{font-size:13px;color:#555;line-height:1.6}
+.hint{font-size:11px;color:#888;text-align:center;margin-top:4px}
+svg .node{cursor:pointer}
+svg .node:hover{opacity:.8}
+svg .hidden{opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Koolstofkringloop — interactief Binas-schema</h1>
+<div class="topbar">
+  <span style="font-size:11px;color:#666">Niveau:</span>
+  <button class="level-btn active" id="btn-havo" onclick="setLevel('havo')">Havo</button>
+  <button class="level-btn" id="btn-vwo" onclick="setLevel('vwo')">VWO</button>
+</div>
+<div class="stepbar">
+  <button class="step-btn" onclick="prevStep()">&#8592;</button>
+  <div class="step-dots" id="sdots"></div>
+  <span class="step-label" id="slabel">Stap 1 — CO₂ atmosfeer</span>
+  <button class="step-btn" onclick="nextStep()">Volgende &#8594;</button>
+</div>
+
+<svg id="svg" viewBox="0 0 720 860" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;background:#fff;border-radius:8px;border:1px solid #e0e0da">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- ===== RESERVOIRS ===== -->
+<!-- CO2:      cx=340, cy=200, rx=56 → left=284, right=396, top=172, bottom=228 -->
+<!-- Glucose:  cx=160, cy=370, rx=54, ry=26 → top=344, bottom=396 -->
+<!-- OrgPlant: x=55, y=500, w=170, h=52 → right=225, bottom=552, mid-x=140 -->
+<!-- OrgDier:  x=390, y=400, w=165, h=52 → left=390, top=400, mid-x=472 -->
+<!-- Gisting:  x=385, y=288, w=175, h=48 → left=385, top=288, bottom=336, mid-x=472 -->
+<!-- OrgBodem: x=215, y=660, w=165, h=48 → top=660, mid-x=297, right=380 -->
+<!-- Fossiel:  x=420, y=120, w=210, h=48 → left=420, bottom=168, right=630 -->
+<!-- CH4:      cx=590, cy=268, rx=34, ry=22 → left=556, top=246, bottom=290 -->
+<!-- HCO3:     cx=108, cy=75 -->
+<!-- CaCO3:    cx=530, cy=75 -->
+
+<g id="n-co2" class="node hidden" onclick="show('co2')">
+  <ellipse cx="340" cy="200" rx="56" ry="28" fill="#F5A623" stroke="#b87800" stroke-width="1.2"/>
+  <text x="340" y="195" text-anchor="middle" font-size="14" font-weight="700" fill="#3d2000" dominant-baseline="central">CO₂</text>
+  <text x="340" y="213" text-anchor="middle" font-size="10" fill="#5a3200" dominant-baseline="central">atmosfeer</text>
+</g>
+
+<g id="n-glucose" class="node hidden" onclick="show('glucose')">
+  <ellipse cx="160" cy="370" rx="54" ry="26" fill="#8BC34A" stroke="#558b2f" stroke-width="1.2"/>
+  <text x="160" y="370" text-anchor="middle" font-size="13" font-weight="700" fill="#1b3a00" dominant-baseline="central">glucose</text>
+</g>
+
+<g id="n-orgplant" class="node hidden" onclick="show('orgplant')">
+  <rect x="55" y="500" width="170" height="52" rx="6" fill="#8BC34A" stroke="#558b2f" stroke-width="1.2"/>
+  <text x="140" y="519" text-anchor="middle" font-size="12" font-weight="600" fill="#1b3a00" dominant-baseline="central">andere organische</text>
+  <text x="140" y="537" text-anchor="middle" font-size="12" font-weight="600" fill="#1b3a00" dominant-baseline="central">stoffen (plant)</text>
+</g>
+
+<g id="n-orgdier" class="node hidden" onclick="show('orgdier')">
+  <rect x="390" y="400" width="165" height="52" rx="6" fill="#5b9bd5" stroke="#2c6fad" stroke-width="1.2"/>
+  <text x="472" y="419" text-anchor="middle" font-size="12" font-weight="600" fill="#0d2b4e" dominant-baseline="central">organische</text>
+  <text x="472" y="437" text-anchor="middle" font-size="12" font-weight="600" fill="#0d2b4e" dominant-baseline="central">stoffen (dier)</text>
+</g>
+
+<g id="n-gisting" class="node hidden" onclick="show('gisting')">
+  <rect x="385" y="288" width="175" height="48" rx="6" fill="#c8a96e" stroke="#7a5c1e" stroke-width="1.2"/>
+  <text x="472" y="306" text-anchor="middle" font-size="11" font-weight="600" fill="#3b2200" dominant-baseline="central">andere organische</text>
+  <text x="472" y="322" text-anchor="middle" font-size="11" font-weight="600" fill="#3b2200" dominant-baseline="central">gistingsproducten</text>
+</g>
+
+<g id="n-orgbodem" class="node hidden" onclick="show('orgbodem')">
+  <rect x="215" y="660" width="165" height="48" rx="6" fill="#c8a96e" stroke="#7a5c1e" stroke-width="1.2"/>
+  <text x="297" y="678" text-anchor="middle" font-size="11" font-weight="600" fill="#3b2200" dominant-baseline="central">organische</text>
+  <text x="297" y="694" text-anchor="middle" font-size="11" font-weight="600" fill="#3b2200" dominant-baseline="central">stoffen (bodem)</text>
+</g>
+
+<g id="n-fossiel" class="node hidden" onclick="show('fossiel')">
+  <rect x="420" y="120" width="210" height="48" rx="6" fill="#fff5d6" stroke="#b87800" stroke-width="1.2" stroke-dasharray="6,3"/>
+  <text x="525" y="139" text-anchor="middle" font-size="11" font-weight="600" fill="#3d2000" dominant-baseline="central">sedimenten, bodem,</text>
+  <text x="525" y="155" text-anchor="middle" font-size="11" font-weight="600" fill="#3d2000" dominant-baseline="central">fossiele brandstoffen</text>
+</g>
+
+<g id="n-ch4" class="node hidden" onclick="show('ch4')">
+  <ellipse cx="590" cy="268" rx="34" ry="22" fill="#d8d8d8" stroke="#888" stroke-width="1.2"/>
+  <text x="590" y="268" text-anchor="middle" font-size="13" font-weight="700" fill="#222" dominant-baseline="central">CH₄</text>
+</g>
+
+<g id="n-hco3" class="node hidden" onclick="show('hco3')">
+  <ellipse cx="108" cy="75" rx="72" ry="26" fill="#F5A623" stroke="#b87800" stroke-width="1.2"/>
+  <text x="108" y="70" text-anchor="middle" font-size="12" font-weight="700" fill="#3d2000" dominant-baseline="central">HCO₃⁻, CO₃²⁻</text>
+  <text x="108" y="87" text-anchor="middle" font-size="10" fill="#5a3200" dominant-baseline="central">water</text>
+</g>
+
+<g id="n-caco3" class="node hidden" onclick="show('caco3')">
+  <ellipse cx="530" cy="75" rx="50" ry="26" fill="#F5A623" stroke="#b87800" stroke-width="1.2"/>
+  <text x="530" y="70" text-anchor="middle" font-size="13" font-weight="700" fill="#3d2000" dominant-baseline="central">CaCO₃</text>
+  <text x="530" y="87" text-anchor="middle" font-size="10" fill="#5a3200" dominant-baseline="central">kalk</text>
+</g>
+
+<!-- ===== PIJLEN ===== -->
+
+<!-- FOTOSYNTHESE: CO2-links(284,210) → x=120 → omlaag → glucose-top(160,344) -->
+<g id="e-foto" class="hidden">
+  <line x1="284" y1="210" x2="120" y2="210" stroke="#558b2f" stroke-width="1.4"/>
+  <line x1="120" y1="210" x2="120" y2="344" stroke="#558b2f" stroke-width="1.4" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('fotosynthese')">
+    <rect x="48" y="254" width="80" height="30" rx="3" fill="#e8f5e9" stroke="#558b2f" stroke-width="0.8"/>
+    <text x="88" y="265" text-anchor="middle" font-size="9" fill="#2d6a2d">fotosynthese</text>
+    <text x="88" y="277" text-anchor="middle" font-size="9" fill="#2d6a2d">(planten, bact.)</text>
+  </g>
+</g>
+
+<!-- VWO chemosynthese label onder fotosynthese -->
+<g id="vwo-chemo" class="hidden" onclick="show('chemosynthese')" style="cursor:pointer">
+  <rect x="48" y="288" width="80" height="16" rx="3" fill="#e3f2fd" stroke="#1565c0" stroke-width="0.5"/>
+  <text x="88" y="299" text-anchor="middle" font-size="9" fill="#1565c0">chemosynthese</text>
+</g>
+
+<!-- VOORTGEZETTE ASSIMILATIE: glucose-bottom(160,396) → omlaag → orgplant-top(160,500)
+     Label midden op segment: x=160→rechts, y=448 -->
+<g id="e-assim" class="hidden">
+  <line x1="160" y1="396" x2="160" y2="500" stroke="#558b2f" stroke-width="1.3" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('assim')">
+    <rect x="68" y="434" width="88" height="30" rx="3" fill="#e8f5e9" stroke="#558b2f" stroke-width="0.8"/>
+    <text x="112" y="445" text-anchor="middle" font-size="9" fill="#2d6a2d">voortgezette</text>
+    <text x="112" y="457" text-anchor="middle" font-size="9" fill="#2d6a2d">assimilatie</text>
+  </g>
+</g>
+
+<!-- AEROBE DISS glucose→CO2:
+     glucose-top(160,344) → omhoog x=160 → y=228 → rechts naar CO2-links(284,228)
+     Label op horizontaal segment: midden=(222,228) -->
+<g id="e-adis-glucose" class="hidden">
+  <line x1="160" y1="344" x2="160" y2="228" stroke="#2196F3" stroke-width="1.3"/>
+  <line x1="160" y1="228" x2="284" y2="228" stroke="#2196F3" stroke-width="1.3" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('aerobe_dis')">
+    <rect x="120" y="274" width="80" height="30" rx="3" fill="#e3f2fd" stroke="#1565c0" stroke-width="0.8"/>
+    <text x="160" y="285" text-anchor="middle" font-size="9" fill="#1565c0">aerobe</text>
+    <text x="160" y="297" text-anchor="middle" font-size="9" fill="#1565c0">dissimilatie</text>
+  </g>
+</g>
+
+<!-- AEROBE DISS orgdier→CO2:
+     Start linkermidden orgdier (x=390, y=426) → links x=340 → omhoog via x=340 tot CO2(340,228) → pijl
+     Loopt helemaal door naar CO2, ook in stap 3 al volledig zichtbaar -->
+<g id="e-adis-dier" class="hidden">
+  <line x1="390" y1="426" x2="340" y2="426" stroke="#2196F3" stroke-width="1.3"/>
+  <line x1="340" y1="426" x2="340" y2="228" stroke="#2196F3" stroke-width="1.3" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('aerobe_dis')">
+    <rect x="300" y="354" width="80" height="30" rx="3" fill="#e3f2fd" stroke="#1565c0" stroke-width="0.8"/>
+    <text x="340" y="365" text-anchor="middle" font-size="9" fill="#1565c0">aerobe</text>
+    <text x="340" y="377" text-anchor="middle" font-size="9" fill="#1565c0">dissimilatie</text>
+  </g>
+</g>
+
+<!-- AEROBE DISS gisting→CO2 (orgdier sluit hier op aan via x=340):
+     Gisting-links(385,312) → links x=340 → omhoog → CO2-bottom(340,228)
+     Geen apart label — orgdier brengt zijn eigen traject mee -->
+<g id="e-adis-bact" class="hidden">
+  <line x1="385" y1="312" x2="340" y2="312" stroke="#2196F3" stroke-width="1.3"/>
+  <line x1="340" y1="312" x2="340" y2="228" stroke="#2196F3" stroke-width="1.3" marker-end="url(#ar)"/>
+</g>
+
+<!-- AEROBE DISS orgbodem→CO2 (eigen route via x=240):
+     Orgbodem-top(297,660) → omhoog x=297 → y=552 → links x=240 → omhoog → CO2-links(284,228) -->
+<g id="e-adis-red" class="hidden">
+  <line x1="297" y1="660" x2="297" y2="552" stroke="#2196F3" stroke-width="1.3"/>
+  <line x1="297" y1="552" x2="240" y2="552" stroke="#2196F3" stroke-width="1.3"/>
+  <line x1="240" y1="552" x2="240" y2="228" stroke="#2196F3" stroke-width="1.3"/>
+  <line x1="240" y1="228" x2="284" y2="228" stroke="#2196F3" stroke-width="1.3" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('aerobe_red')">
+    <rect x="248" y="590" width="108" height="30" rx="3" fill="#e3f2fd" stroke="#1565c0" stroke-width="0.8"/>
+    <text x="302" y="601" text-anchor="middle" font-size="9" fill="#1565c0">aerobe diss.</text>
+    <text x="302" y="613" text-anchor="middle" font-size="9" fill="#1565c0">(schimmels, bact.)</text>
+  </g>
+</g>
+
+<!-- VERBRANDING brand: orgplant-links(55,526) → x=30 → omhoog → CO2-links(284,200)
+     Label midden op vertikaal segment: y=363 -->
+<g id="e-brand" class="hidden">
+  <line x1="55" y1="526" x2="30" y2="526" stroke="#555" stroke-width="1.2"/>
+  <line x1="30" y1="526" x2="30" y2="200" stroke="#555" stroke-width="1.2"/>
+  <line x1="30" y1="200" x2="284" y2="200" stroke="#555" stroke-width="1.2" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('verbranding')">
+    <rect x="34" y="346" width="56" height="30" rx="3" fill="#fffbe6" stroke="#ccc" stroke-width="0.5"/>
+    <text x="62" y="357" text-anchor="middle" font-size="9" fill="#555">verbranding</text>
+    <text x="62" y="369" text-anchor="middle" font-size="9" fill="#555">(brand)</text>
+  </g>
+</g>
+
+<!-- VERTERING: orgplant-rechts(225,500) → rechts → omhoog → orgdier-links(390,452)
+     Label op horizontaal segment midden: x=307, hoger zodat op pijl staat -->
+<g id="e-vertering" class="hidden">
+  <line x1="225" y1="500" x2="390" y2="500" stroke="#555" stroke-width="1.2"/>
+  <line x1="390" y1="500" x2="390" y2="452" stroke="#555" stroke-width="1.2" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('vertering')">
+    <rect x="254" y="472" width="106" height="30" rx="3" fill="#fffbe6" stroke="#ccc" stroke-width="0.5"/>
+    <text x="307" y="483" text-anchor="middle" font-size="9" fill="#555">vertering +</text>
+    <text x="307" y="495" text-anchor="middle" font-size="9" fill="#555">voortg. assim.</text>
+  </g>
+</g>
+
+<!-- GISTING: orgdier-links-top(440,400) → omhoog → gisting-bottom(440,336)
+     Label midden op segment: y=368 -->
+<g id="e-gisting" class="hidden">
+  <line x1="440" y1="400" x2="440" y2="336" stroke="#7a5c1e" stroke-width="1.2" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('gisting_proc')">
+    <rect x="400" y="352" width="48" height="18" rx="3" fill="#fff5d6" stroke="#7a5c1e" stroke-width="0.5"/>
+    <text x="424" y="364" text-anchor="middle" font-size="9" fill="#5a3200">gisting</text>
+  </g>
+</g>
+
+<!-- STERFTE plant→bodem: orgplant-bottom(140,552) → omlaag → orgbodem-links(215,684)
+     Label midden op vertikaal segment: y=618 -->
+<g id="e-sterfte-plant" class="hidden">
+  <line x1="140" y1="552" x2="140" y2="684" stroke="#7a5c1e" stroke-width="1.1"/>
+  <line x1="140" y1="684" x2="215" y2="684" stroke="#7a5c1e" stroke-width="1.1" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('sterfte')">
+    <rect x="100" y="602" width="80" height="30" rx="3" fill="#fff5d6" stroke="#7a5c1e" stroke-width="0.5"/>
+    <text x="140" y="613" text-anchor="middle" font-size="9" fill="#5a3200">sterfte,</text>
+    <text x="140" y="625" text-anchor="middle" font-size="9" fill="#5a3200">org. afval</text>
+  </g>
+</g>
+
+<!-- STERFTE dier→bodem: orgdier-bottom(472,452) → omlaag → y=630 → links x=380 → omlaag → orgbodem-rechts(380,660)
+     Loopt links langs anaerobe pijl (die op x=550 loopt), label op verticaal segment -->
+<g id="e-sterfte-dier" class="hidden">
+  <line x1="472" y1="452" x2="472" y2="630" stroke="#7a5c1e" stroke-width="1.1"/>
+  <line x1="472" y1="630" x2="380" y2="630" stroke="#7a5c1e" stroke-width="1.1"/>
+  <line x1="380" y1="630" x2="380" y2="660" stroke="#7a5c1e" stroke-width="1.1" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('sterfte')">
+    <rect x="422" y="524" width="80" height="30" rx="3" fill="#fff5d6" stroke="#7a5c1e" stroke-width="0.5"/>
+    <text x="462" y="535" text-anchor="middle" font-size="9" fill="#5a3200">sterfte,</text>
+    <text x="462" y="547" text-anchor="middle" font-size="9" fill="#5a3200">org. afval</text>
+  </g>
+</g>
+
+<!-- ANAEROBE DISS: orgbodem-rechts(380,684) → rechts x=550 → omhoog → gisting-rechts(560,336)
+     Label op verticaal segment, meer naar links zodat op pijl staat -->
+<g id="e-anaerobe" class="hidden">
+  <line x1="380" y1="684" x2="550" y2="684" stroke="#7a5c1e" stroke-width="1.1"/>
+  <line x1="550" y1="684" x2="550" y2="336" stroke="#7a5c1e" stroke-width="1.1" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('anaerobe_red')">
+    <rect x="492" y="488" width="110" height="30" rx="3" fill="#fff5d6" stroke="#7a5c1e" stroke-width="0.5"/>
+    <text x="547" y="499" text-anchor="middle" font-size="9" fill="#5a3200">anaerobe diss.</text>
+    <text x="547" y="511" text-anchor="middle" font-size="9" fill="#5a3200">(schimmels, bact.)</text>
+  </g>
+</g>
+
+<!-- VERWERING fossiel→CO2: fossiel-links(420,144) → links x=400 → omlaag → CO2-rechts(396,200)
+     Label op verticaal segment midden: y=172 -->
+<g id="e-verwering" class="hidden">
+  <line x1="420" y1="144" x2="400" y2="144" stroke="#555" stroke-width="1"/>
+  <line x1="400" y1="144" x2="400" y2="200" stroke="#555" stroke-width="1" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('verwering')">
+    <rect x="358" y="162" width="96" height="18" rx="3" fill="#fffbe6" stroke="#ccc" stroke-width="0.5"/>
+    <text x="406" y="174" text-anchor="middle" font-size="10" fill="#555">verwering/verb.</text>
+  </g>
+</g>
+
+<!-- CaCO3→fossiel -->
+<g id="e-caco3-foss" class="hidden">
+  <line x1="530" y1="101" x2="530" y2="120" stroke="#555" stroke-width="1" marker-end="url(#ar)"/>
+</g>
+
+<!-- OXIDATIE CH4→CO2: ch4-links(556,268) → links x=500 → omhoog y=205 → CO2-rechts(396,205)
+     Label op horizontaal segment midden -->
+<g id="e-oxidatie" class="hidden">
+  <line x1="556" y1="268" x2="500" y2="268" stroke="#888" stroke-width="1"/>
+  <line x1="500" y1="268" x2="500" y2="205" stroke="#888" stroke-width="1"/>
+  <line x1="500" y1="205" x2="396" y2="205" stroke="#888" stroke-width="1" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('oxidatie')">
+    <rect x="404" y="210" width="96" height="18" rx="3" fill="#fffbe6" stroke="#ccc" stroke-width="0.5"/>
+    <text x="452" y="222" text-anchor="middle" font-size="10" fill="#555">oxidatie in atm.</text>
+  </g>
+</g>
+
+<!-- gisting→CH4 -->
+<g id="e-gist-ch4" class="hidden">
+  <line x1="560" y1="312" x2="590" y2="312" stroke="#888" stroke-width="1"/>
+  <line x1="590" y1="312" x2="590" y2="290" stroke="#888" stroke-width="1" marker-end="url(#ar)"/>
+</g>
+
+<!-- FOSSILISATIE CH4→fossiel: rechte lijn van ch4-top(590,246) → fossiel-rechtsonder(630,168) -->
+<g id="e-fossilisatie" class="hidden">
+  <line x1="590" y1="246" x2="630" y2="168" stroke="#888" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('fossilisatie')">
+    <rect x="600" y="196" width="82" height="30" rx="3" fill="#fffbe6" stroke="#ccc" stroke-width="0.5"/>
+    <text x="641" y="207" text-anchor="middle" font-size="9" fill="#888">fossilisatie</text>
+    <text x="641" y="219" text-anchor="middle" font-size="9" fill="#888">(milj. jaren)</text>
+  </g>
+</g>
+
+<!-- HCO3→CaCO3 neerslag -->
+<g id="e-neerslag" class="hidden">
+  <line x1="180" y1="68" x2="480" y2="68" stroke="#555" stroke-width="1" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('neerslag')">
+    <rect x="258" y="50" width="106" height="18" rx="3" fill="#fffbe6" stroke="#ccc" stroke-width="0.5"/>
+    <text x="311" y="62" text-anchor="middle" font-size="10" fill="#555">neerslag (+Ca²⁺)</text>
+  </g>
+</g>
+
+<!-- CaCO3→HCO3 oplossen -->
+<g id="e-oplossen" class="hidden">
+  <line x1="480" y1="80" x2="180" y2="80" stroke="#555" stroke-width="1" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('oplossen')">
+    <rect x="258" y="82" width="106" height="18" rx="3" fill="#fffbe6" stroke="#ccc" stroke-width="0.5"/>
+    <text x="311" y="94" text-anchor="middle" font-size="10" fill="#555">oplossen (−Ca²⁺)</text>
+  </g>
+</g>
+
+<!-- HCO3→CO2 -->
+<g id="e-hco3-co2" class="hidden">
+  <line x1="108" y1="101" x2="108" y2="162" stroke="#555" stroke-width="1"/>
+  <line x1="108" y1="162" x2="284" y2="162" stroke="#555" stroke-width="1"/>
+  <line x1="284" y1="162" x2="284" y2="200" stroke="#555" stroke-width="1" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('oplossen')">
+    <rect x="168" y="148" width="58" height="18" rx="3" fill="#fffbe6" stroke="#ccc" stroke-width="0.5"/>
+    <text x="197" y="160" text-anchor="middle" font-size="10" fill="#555">oplossen</text>
+  </g>
+</g>
+
+<!-- VULKAAN→CO2: label rechts van verbranding-lijn (die op x=30 loopt)
+     Pijl vertrekt vanuit label rechts(130,190) → CO2-links(284,190) -->
+<g id="e-vulkaan" class="hidden">
+  <line x1="130" y1="190" x2="284" y2="190" stroke="#555" stroke-width="1" marker-end="url(#ar)"/>
+  <g class="node" onclick="show('vulkaan')">
+    <rect x="44" y="174" width="88" height="30" rx="3" fill="#fffbe6" stroke="#ccc" stroke-width="0.5"/>
+    <text x="88" y="185" text-anchor="middle" font-size="10" fill="#555">vulkaan-</text>
+    <text x="88" y="197" text-anchor="middle" font-size="10" fill="#555">uitbarsting</text>
+  </g>
+</g>
+
+<!-- LEGENDA -->
+<rect x="40" y="836" width="12" height="12" rx="2" fill="#F5A623" stroke="#b87800" stroke-width="0.8"/>
+<text x="58" y="846" font-size="10" fill="#555">anorganisch</text>
+<rect x="150" y="836" width="12" height="12" rx="2" fill="#8BC34A" stroke="#558b2f" stroke-width="0.8"/>
+<text x="168" y="846" font-size="10" fill="#555">producenten</text>
+<rect x="265" y="836" width="12" height="12" rx="2" fill="#5b9bd5" stroke="#2c6fad" stroke-width="0.8"/>
+<text x="283" y="846" font-size="10" fill="#555">consumenten</text>
+<rect x="380" y="836" width="12" height="12" rx="2" fill="#c8a96e" stroke="#7a5c1e" stroke-width="0.8"/>
+<text x="398" y="846" font-size="10" fill="#555">reducenten</text>
+</svg>
+
+<div class="info-panel" id="info-panel">
+  <div style="color:#888;font-size:13px">Gebruik de pijlknoppen om het schema stap voor stap op te bouwen. Klik daarna op een vakje of procesetiket voor uitleg.</div>
+</div>
+<p class="hint">Oranje = anorganisch &nbsp;·&nbsp; Groen = producenten &nbsp;·&nbsp; Blauw = consumenten &nbsp;·&nbsp; Bruin = reducenten</p>
+</div>
+
+<script>
+var level='havo',current=null;
+var steps=[
+  {label:'Stap 1 — CO₂ atmosfeer',show:['n-co2']},
+  {label:'Stap 2 — Producenten (fotosynthese & assimilatie)',show:['n-glucose','n-orgplant','e-foto','e-assim','e-adis-glucose','e-brand']},
+  {label:'Stap 3 — Consumenten (vertering & ademhaling)',show:['n-orgdier','e-vertering','e-adis-dier']},
+  {label:'Stap 4 — Reducenten (afbraak & gisting)',show:['n-gisting','n-orgbodem','e-gisting','e-adis-bact','e-sterfte-plant','e-sterfte-dier','e-adis-red','e-anaerobe']},
+  {label:'Stap 5 — Langzame kringloop (fossiel & CH₄)',show:['n-fossiel','n-ch4','e-verwering','e-oxidatie','e-gist-ch4','e-fossilisatie']},
+  {label:'Stap 6 — Oceaan & geochemie (volledig schema)',show:['n-hco3','n-caco3','e-caco3-foss','e-neerslag','e-oplossen','e-hco3-co2','e-vulkaan']}
+];
+
+var curStep=0,visible=new Set();
+
+function allIds(){var ids=[];document.querySelectorAll('#svg [id]').forEach(function(el){if(el.id)ids.push(el.id);});return ids;}
+
+function applyVisible(){
+  allIds().forEach(function(id){
+    var el=document.getElementById(id);
+    if(!el||id==='ar'||id==='svg') return;
+    var s=visible.has(id);
+    if(id==='vwo-chemo') s=visible.has(id)&&level==='vwo';
+    el.classList.toggle('hidden',!s);
+  });
+  updateDots();
+}
+
+function nextStep(){
+  if(curStep<steps.length-1) curStep++;
+  steps[curStep].show.forEach(function(id){visible.add(id);});
+  document.getElementById('slabel').textContent=steps[curStep].label;
+  applyVisible();
+}
+
+function prevStep(){
+  if(curStep===0) return;
+  var rem=steps[curStep].show;
+  rem.forEach(function(id){
+    var keep=false;
+    for(var i=0;i<curStep;i++) if(steps[i].show.indexOf(id)>=0) keep=true;
+    if(!keep) visible.delete(id);
+  });
+  curStep--;
+  document.getElementById('slabel').textContent=steps[curStep].label;
+  applyVisible();
+}
+
+function updateDots(){
+  var el=document.getElementById('sdots');el.innerHTML='';
+  steps.forEach(function(_,i){
+    var d=document.createElement('div');
+    d.className='sdot'+(i<curStep?' done':i===curStep?' cur':'');
+    el.appendChild(d);
+  });
+}
+
+function setLevel(l){
+  level=l;
+  document.getElementById('btn-havo').classList.toggle('active',l==='havo');
+  document.getElementById('btn-vwo').classList.toggle('active',l==='vwo');
+  applyVisible();
+  if(current) show(current);
+}
+
+var data={
+  co2:{title:'CO₂ in de atmosfeer',havo:'CO₂ is het centrale reservoir in de koolstofkringloop. Planten nemen CO₂ op via fotosynthese; ademhaling en verbranding voegen CO₂ terug toe. De concentratie CO₂ bepaalt mede de sterkte van het broeikaseffect.',vwo:'CO₂ staat in evenwicht met HCO₃⁻ en CO₃²⁻ in water. De partiaaldruk (pCO₂) bepaalt de richting van uitwisseling tussen atmosfeer en oceaan.'},
+  hco3:{title:'HCO₃⁻ en CO₃²⁻ in water',havo:'CO₂ lost op in water en vormt koolzuur dat uiteenvalt in bicarbonaat en carbonaat. Bij hogere CO₂-concentraties daalt de pH: oceaanverzuring.',vwo:'CO₂ + H₂O ⇌ H₂CO₃ ⇌ H⁺ + HCO₃⁻ ⇌ 2H⁺ + CO₃²⁻. Lagere pH vermindert CO₃²⁻, waardoor kalkvorming energetisch duurder wordt.'},
+  caco3:{title:'CaCO₃ — kalk',havo:'Schelpdieren, koralen en algen bouwen skeletten van calciumcarbonaat. Na hun dood stapelt dit op als sediment — langzame koolstofkringloop.',vwo:'CaCO₃ lost op via CaCO₃ + CO₂ + H₂O → Ca²⁺ + 2HCO₃⁻.'},
+  fossiel:{title:'Sedimenten en fossiele brandstoffen',havo:'Koolstof kan miljoenen jaren vastgelegd worden in gesteenten en fossiele brandstoffen. Verbranding brengt die koolstof razendsnel terug als CO₂ — te snel voor de snelle kringloop.',vwo:'Fossilisatie vereist anaerobe bewaring en thermische rijping over miljoenen jaren.'},
+  ch4:{title:'Methaan (CH₄)',havo:'Methaan is een krachtig broeikasgas dat vrijkomt bij anaerobe afbraak en bij herkauwers. In de atmosfeer wordt het geoxideerd tot CO₂.',vwo:'GWP ~28 over 100 jaar. Oxidatie via OH•-radicalen.'},
+  glucose:{title:'Glucose',havo:'Glucose is het directe product van fotosynthese: 6CO₂ + 6H₂O + lichtenergie → C₆H₁₂O₆ + 6O₂. Energiebron én bouwstof voor alle andere organische moleculen.',vwo:'Gevormd via lichtreacties (ATP, NADPH) en Calvin-cyclus (RuBisCO).'},
+  orgplant:{title:'Organische stoffen in planten',havo:'Via voortgezette assimilatie maakt de plant zetmeel, cellulose, eiwitten en vetten. Deze biomassa wordt opgegeten of afgebroken na de dood.',vwo:'Lignine en cutine zijn slecht afbreekbaar. C/N-verhouding bepaalt afbraaksnelheid door reducenten.'},
+  orgdier:{title:'Organische stoffen in dieren',havo:'Dieren nemen organische stoffen op door te eten en bouwen via assimilatie eigen biomassa op. Bij ademhaling komt CO₂ vrij.',vwo:'Trofische efficiëntie ~10% door warmteverlies bij ademhaling.'},
+  gisting:{title:'Andere organische gistingsproducten',havo:'Bij gisting breken micro-organismen organische stoffen af zonder zuurstof, met als producten o.a. ethanol en methaan.',vwo:'Fermentatie: pyruvaat als eindacceptor. In sedimenten: acetogenese gevolgd door methanogenese door archaea.'},
+  orgbodem:{title:'Organische stoffen in de bodem',havo:'Dood organisch materiaal hoopt op in de bodem. In natte zuurstofarmebodems (veen) stapelt koolstof op (sink). Bij droogte wordt de bodem een CO₂-bron.',vwo:'Bodemorganische stof (SOM) slaat wereldwijd ~2× meer koolstof op dan de atmosfeer.'},
+  fotosynthese:{title:'Fotosynthese',havo:'Planten en fotoautotrofe bacteriën zetten CO₂ + H₂O om in organische stoffen met lichtenergie. De belangrijkste weg waarop koolstof de atmosfeer verlaat.',vwo:'Calvin-cyclus fixeert CO₂ via RuBisCO. C4- en CAM-planten verminderen fotorespiratie.'},
+  chemosynthese:{title:'Chemosynthese (VWO)',havo:'',vwo:'Chemoautotrofe bacteriën gebruiken chemische energie (bijv. H₂S, NH₄⁺) om CO₂ te fixeren zonder licht. Belangrijk bij hydrothermale vents.'},
+  aerobe_dis:{title:'Aerobe dissimilatie',havo:'Celademhaling: C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + energie (ATP). Geldt voor planten, dieren én micro-organismen. CO₂ komt vrij in de atmosfeer.',vwo:'Glycolyse → citroenzuurcyclus → oxidatieve fosforylering. ~36–38 ATP per glucose.'},
+  aerobe_red:{title:'Aerobe afbraak door reducenten',havo:'Schimmels en bacteriën breken dood organisch materiaal aerobe af. CO₂ komt vrij. Essentieel om elementen beschikbaar te houden voor producenten.',vwo:'Lignolyse door witte-rot schimmels via oxidatieve enzymen.'},
+  anaerobe_red:{title:'Anaerobe dissimilatie door reducenten',havo:'Zonder zuurstof breken bacteriën en schimmels organisch materiaal af. Dit levert minder energie en produceert o.a. methaan. Gebeurt in waterbodem en veenlagen.',vwo:'Methanogenese: CO₂ + 4H₂ → CH₄ + 2H₂O door archaea in diep anaerobe lagen.'},
+  assim:{title:'Voortgezette assimilatie',havo:'Uit glucose maakt de plant zetmeel, cellulose, eiwitten en vetten. Kan worden opgegeten of afsterven.',vwo:'Anabole processen vergen ATP en NADPH.'},
+  vertering:{title:'Vertering en assimilatie (dieren)',havo:'Via vertering worden organische stoffen afgebroken en opgenomen als eigen biomassa. Een deel verlaat het lichaam als uitwerpselen.',vwo:'Assimilatie-efficiëntie: herbivoren ~40%, carnivoren ~80%.'},
+  sterfte:{title:'Sterfte en organisch afval',havo:'Na de dood van planten en dieren komt organisch materiaal als detritus in de bodem. Reducenten breken dit af waarbij CO₂ vrijkomt.',vwo:'Detritusvoedseketen: macro-organismen verkleinen, micro-organismen mineraliseren.'},
+  verbranding:{title:'Verbranding',havo:'Bij bosbranden en verbranding van fossiele brandstoffen komt CO₂ vrij. Vastgelegde koolstof wordt razendsnel teruggegeven aan de atmosfeer.',vwo:'Verbranding biomassa is CO₂-neutraal bij hergroei. Fossiele verbranding voegt nieuwe CO₂ toe.'},
+  verwering:{title:'Verwering',havo:'Kalkgesteenten lossen op door CO₂-houdend regenwater — langzame kringloop over duizenden tot miljoenen jaren.',vwo:'Urey-reactie: CaSiO₃ + CO₂ → CaCO₃ + SiO₂.'},
+  oplossen:{title:'Oplossen van CO₂ in water',havo:'CO₂ lost op in water en vormt koolzuur. Oceanen nemen grote hoeveelheden CO₂ op. Bij hogere CO₂ daalt de pH: oceaanverzuring.',vwo:'Oceaan heeft ~30% menselijke CO₂-uitstoot opgenomen. pH gedaald van 8,2 naar 8,1.'},
+  neerslag:{title:'Neerslaan van CaCO₃',havo:'Ca²⁺ en CO₃²⁻ samen slaan neer als CaCO₃ in schelpen en koralen. Stapelt op als sediment — langzame kringloop.',vwo:'Bij oceaanverzuring daalt CO₃²⁻, waardoor verzadigingstoestand Ω daalt.'},
+  vulkaan:{title:'Vulkaanuitbarsting',havo:'Vulkanen stoten CO₂ uit wanneer koolstofhoudende gesteenten smelten — langzame kringloop over miljoenen jaren.',vwo:'Vulkanische uitstoot ~0,3 Gt C/jaar vs. menselijk ~10 Gt C/jaar.'},
+  oxidatie:{title:'Oxidatie van CH₄',havo:'Methaan wordt in de atmosfeer afgebroken tot CO₂. CH₄ is krachtiger dan CO₂ maar heeft kortere verblijftijd (~12 jaar).',vwo:'CH₄ + OH• → reactieketen → CO₂ + H₂O.'},
+  fossilisatie:{title:'Fossilisatie',havo:'Organisch materiaal kan onder zuurstofarmecondities voor miljoenen jaren bewaard blijven en fossiele brandstoffen vormen.',vwo:'Kerogeen rijpt bij hoge T en druk tot olie en gas. Duurt tientallen tot honderden miljoenen jaren.'},
+  gisting_proc:{title:'Gisting',havo:'Gisting is anaerobe afbraak zonder zuurstof met als producten ethanol en methaan.',vwo:'Alcoholische gisting: C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂ (2 ATP). Methanogenese door archaea in sedimenten.'}
+};
+
+function show(key){
+  current=key;var d=data[key];if(!d) return;
+  var txt=level==='vwo'?d.vwo:d.havo;
+  var panel=document.getElementById('info-panel');
+  if(!txt){panel.innerHTML='<div style="color:#888;font-size:13px">Dit onderdeel is alleen relevant voor VWO.</div>';return;}
+  var lbl=level==='vwo'?'<span class="info-level vwo">VWO</span>':'<span class="info-level havo">Havo</span>';
+  panel.style.opacity='0';
+  setTimeout(function(){panel.innerHTML=lbl+'<div class="info-title">'+d.title+'</div><div class="info-text">'+txt+'</div>';panel.style.opacity='1';},80);
+}
+
+visible.add('n-co2');
+document.getElementById('slabel').textContent=steps[0].label;
+applyVisible();
+</script>
+</body>
+</html>
