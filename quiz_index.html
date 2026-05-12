@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ecologie herhalingsquiz H1–H3</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;font-size:14px;background:#f5f5f2;color:#1a1a18;min-height:100vh;padding:1.5rem}
+h1{font-size:18px;font-weight:500;margin-bottom:1.25rem;color:#1a1a18}
+.chapter-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem}
+.ch-btn{background:#fff;border:1px solid #ddd;border-radius:12px;padding:14px 10px;cursor:pointer;text-align:center;transition:background .15s;font-family:inherit}
+.ch-btn:hover{background:#f0f0ec}
+.ch-btn.active{border:2px solid #2563eb;background:#eff6ff}
+.ch-num{font-size:11px;color:#666;margin-bottom:4px}
+.ch-title{font-size:13px;font-weight:500;color:#1a1a18}
+.ch-btn.active .ch-num,.ch-btn.active .ch-title{color:#1d4ed8}
+.q-card{background:#fff;border:1px solid #e5e5e0;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.q-meta{font-size:11px;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.q-text{font-size:14px;font-weight:500;margin-bottom:1rem;line-height:1.5}
+.mc-options{display:flex;flex-direction:column;gap:7px}
+.mc-opt{background:#f5f5f2;border:1px solid #e0e0da;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:13px;text-align:left;transition:background .1s;color:#1a1a18;font-family:inherit;width:100%}
+.mc-opt:hover:not(:disabled){background:#fff;border-color:#bbb}
+.mc-opt.correct{background:#f0fdf4;border-color:#86efac;color:#166534}
+.mc-opt.wrong{background:#fef2f2;border-color:#fca5a5;color:#991b1b}
+.feedback{font-size:13px;margin-top:10px;padding:8px 12px;border-radius:8px;line-height:1.5}
+.feedback.ok{background:#f0fdf4;color:#166534;border:1px solid #86efac}
+.feedback.nok{background:#fef2f2;color:#991b1b;border:1px solid #fca5a5}
+.drag-bank{display:flex;flex-wrap:wrap;gap:8px;min-height:38px;padding:8px;border:1px dashed #ccc;border-radius:8px;background:#f5f5f2;margin-bottom:12px}
+.drag-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:4px}
+.drag-col-label{font-size:11px;color:#888;margin-bottom:4px}
+.drag-target{border:1px dashed #ccc;border-radius:8px;padding:8px 12px;min-height:48px;background:#fff;display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px;transition:background .1s}
+.drag-target.over{background:#eff6ff;border-color:#93c5fd}
+.drag-target.correct{background:#f0fdf4;border-color:#86efac}
+.drag-target.wrong{background:#fef2f2;border-color:#fca5a5}
+.chip{background:#fff;border:1px solid #ddd;border-radius:20px;padding:6px 12px;font-size:13px;cursor:grab;user-select:none;color:#1a1a18;font-family:inherit}
+.chip:active{cursor:grabbing}
+.chip.placed{opacity:.35;cursor:default;pointer-events:none}
+.nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:1rem}
+.score-bar{display:flex;gap:6px;align-items:center}
+.dot{width:10px;height:10px;border-radius:50%;background:#ddd}
+.dot.ok{background:#16a34a}.dot.nok{background:#dc2626}.dot.cur{background:#2563eb}
+.score-card{background:#fff;border:1px solid #e5e5e0;border-radius:12px;padding:2rem 1.25rem;text-align:center}
+.score-big{font-size:40px;font-weight:500;margin-bottom:6px}
+.score-sub{font-size:14px;color:#666;margin-bottom:1.5rem}
+.btn-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+button.action{background:#fff;border:1px solid #ccc;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit;color:#1a1a18}
+button.action:hover{background:#f5f5f2}
+.progress-bar{height:4px;background:#e5e5e0;border-radius:2px;margin-bottom:1.25rem;overflow:hidden}
+.progress-fill{height:100%;background:#2563eb;border-radius:2px;transition:width .3s}
+</style>
+</head>
+<body>
+<h1>Ecologie herhalingsquiz — H1, H2 & H3</h1>
+<div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+<div class="chapter-btns" id="ch-btns">
+  <button class="ch-btn" onclick="startChapter(0)">
+    <div class="ch-num">Hoofdstuk 1</div>
+    <div class="ch-title">Inleiding & ecosystemen</div>
+  </button>
+  <button class="ch-btn" onclick="startChapter(1)">
+    <div class="ch-num">Hoofdstuk 2</div>
+    <div class="ch-title">Soorten & populaties</div>
+  </button>
+  <button class="ch-btn" onclick="startChapter(2)">
+    <div class="ch-num">Hoofdstuk 3</div>
+    <div class="ch-title">Voedselwebben & energie</div>
+  </button>
+</div>
+<div id="quiz-area"></div>
+
+<script>
+var chapters=[
+  {title:"Hoofdstuk 1 — Inleiding & ecosystemen",questions:[
+    {type:"mc",q:"Wat is een ecosysteem?",opts:["Een groep dieren van dezelfde soort","Het geheel van alle levende organismen en hun niet-levende omgeving","Alleen de planten in een gebied","De bodem en het water in een gebied"],ans:1,fb:"Een ecosysteem omvat zowel alle levende organismen (biotisch) als de niet-levende omgeving (abiotisch) en de wisselwerking daartussen."},
+    {type:"drag",q:"Sleep elke factor naar de juiste categorie: biotisch of abiotisch.",items:[{label:"Waterstand",cat:1},{label:"Grauwe gans",cat:0},{label:"Temperatuur",cat:1},{label:"Riet",cat:0},{label:"Bodem",cat:1}],cats:["Biotisch","Abiotisch"],fb:"Biotische factoren zijn alle levende componenten (planten, dieren). Abiotische factoren zijn niet-levend: water, temperatuur, bodem, licht."},
+    {type:"mc",q:"Waarom is een hoge biodiversiteit belangrijk voor een ecosysteem?",opts:["Hoe meer soorten, hoe mooier het gebied eruitziet","Het maakt het ecosysteem veerkrachtiger bij verstoringen","Meer soorten betekent altijd meer voedsel voor mensen","Biodiversiteit heeft geen invloed op de werking van ecosystemen"],ans:1,fb:"Een hogere biodiversiteit zorgt voor meer veerkracht: als één soort wegvalt, kunnen andere soorten de rol overnemen. Dit helpt het ecosysteem om te herstellen na bijv. een overstroming."},
+    {type:"mc",q:"Welke twee functies combineert de Vreugderijkerwaard?",opts:["Landbouw en toerisme","Waterveiligheid en natuurontwikkeling","Visserij en recreatie","Drinkwaterwinning en landbouw"],ans:1,fb:"De Vreugderijkerwaard speelt een rol bij waterveiligheid (berging bij hoogwater) én natuurontwikkeling. Natuurmonumenten beheert het gebied met beide doelen voor ogen."}
+  ]},
+  {title:"Hoofdstuk 2 — Soorten & populaties",questions:[
+    {type:"mc",q:"Wat is het verschil tussen een habitat en een niche?",opts:["Habitat is de rol van een soort, niche is de leefplek","Habitat is de leefplek, niche is de specifieke rol in het ecosysteem","Habitat en niche betekenen hetzelfde","Niche is alleen van toepassing op planten"],ans:1,fb:"De habitat is waar een soort leeft (bijv. steile rivieroever voor de ijsvogel). De niche is de rol die de soort speelt in het ecosysteem (bijv. de ijsvogel reguleert de visstand)."},
+    {type:"drag",q:"Koppel elk begrip aan de juiste omschrijving.",items:[{label:"Draagkracht",cat:0},{label:"Exponentiële groei",cat:1},{label:"Logistische groei",cat:2}],cats:["Max. aantal dat ecosysteem ondersteunt","Steeds sneller groeiende populatie","Groei die afvlakt naar een maximum"],fb:"Bij exponentiële groei zijn er geen beperkingen. Bij logistische groei neemt de groeisnelheid af naarmate de populatie de draagkracht benadert."},
+    {type:"mc",q:"Waarom zijn de grauwe gans en de kolgans twee verschillende soorten?",opts:["Ze hebben een andere kleur","Ze planten zich in de natuur niet met elkaar voort","Ze leven in verschillende landen","Ze hebben een andere grootte"],ans:1,fb:"Het soortbegrip is gebaseerd op voortplanting: twee populaties zijn aparte soorten als ze zich onder natuurlijke omstandigheden niet met elkaar voortplanten."},
+    {type:"mc",q:"Welke methode is het meest geschikt om de populatie grote ratelaar te schatten?",opts:["Alle exemplaren in het hele gebied tellen","Een klein vak tellen en vermenigvuldigen voor het totale gebied","Fotograferen vanuit de lucht","Vragen aan bezoekers hoeveel ze er zien"],ans:1,fb:"Door een steekproef (kwadratenmethode) te nemen en te vermenigvuldigen met het totale oppervlak, krijg je een betrouwbare schatting zonder het hele gebied te hoeven doorzoeken."}
+  ]},
+  {title:"Hoofdstuk 3 — Voedselwebben & energie",questions:[
+    {type:"drag",q:"Orden deze organismen van laagste naar hoogste trofisch niveau.",items:[{label:"Zeearend",cat:2},{label:"Gras",cat:0},{label:"Grauwe gans",cat:1}],cats:["Niveau 1 — producent","Niveau 2 — consument 1e orde","Niveau 3 — consument 2e orde"],fb:"Gras is de producent. De grauwe gans eet het gras (consument 1e orde). De zeearend eet de gans (consument 2e orde)."},
+    {type:"mc",q:"Wat is accumulatie in de context van persistente stoffen?",opts:["Het verdwijnen van schadelijke stoffen uit het ecosysteem","De ophoping van slecht afbreekbare stoffen in hogere schakels van de voedselketen","De verspreiding van stoffen via water","Het afbreken van organisch materiaal door reducenten"],ans:1,fb:"Persistente stoffen breken nauwelijks af. Via de voedselketen worden ze steeds verder geconcentreerd: een aalscholver bovenaan de keten heeft veel hogere concentraties dan de algen onderaan."},
+    {type:"mc",q:"Waarom is er in hogere trofische niveaus altijd minder energie beschikbaar?",opts:["Omdat hogere niveaus minder eten","Omdat energie verloren gaat als warmte en bij levensprocessen","Omdat producenten de meeste energie opslaan in hun wortels","Omdat de zon minder energie geeft in de winter"],ans:1,fb:"Bij elke overdracht tussen trofische niveaus gaat een groot deel energie verloren als warmte. Typisch wordt slechts ~10% doorgegeven naar het volgende niveau."},
+    {type:"mc",q:"Wat laat een energiepiramide zien?",opts:["Hoeveel soorten er per niveau zijn","Hoeveel energie er per trofisch niveau beschikbaar is","Hoe voedselketens met elkaar verbonden zijn","De hoeveelheid biomassa per soort"],ans:1,fb:"Een energiepiramide toont de beschikbare energie per trofisch niveau. De basis (producenten) is het breedst, hogere niveaus worden smaller omdat er steeds minder energie beschikbaar is."}
+  ]}
+];
+
+var curCh=-1,curQ=0,answers=[],dragState={};
+
+function updateProgress(){
+  var total=0,done=0;
+  chapters.forEach(function(ch){total+=ch.questions.length;});
+  chapters.forEach(function(ch,ci){
+    if(ci<curCh) done+=ch.questions.length;
+    else if(ci===curCh) done+=curQ;
+  });
+  document.getElementById("prog").style.width=Math.round(done/total*100)+"%";
+}
+
+function startChapter(i){
+  curCh=i;curQ=0;answers=[];
+  document.querySelectorAll(".ch-btn").forEach(function(b,j){b.classList.toggle("active",j===i);});
+  renderQ();
+}
+
+function renderQ(){
+  updateProgress();
+  var ch=chapters[curCh],q=ch.questions[curQ];
+  var area=document.getElementById("quiz-area");
+  area.innerHTML="";
+  var card=document.createElement("div");
+  card.className="q-card";
+  card.innerHTML='<div class="q-meta">'+ch.title+' &nbsp;&middot;&nbsp; Vraag '+(curQ+1)+' van '+ch.questions.length+'</div><div class="q-text">'+q.q+'</div>';
+  if(q.type==="mc") card.appendChild(renderMC(q));
+  else card.appendChild(renderDrag(q));
+  area.appendChild(card);
+  var nav=document.createElement("div");
+  nav.className="nav-row";
+  var dots=chapters[curCh].questions.map(function(_,i){
+    var cls="dot"+(i<answers.length?(answers[i]?" ok":" nok"):(i===curQ?" cur":""));
+    return '<div class="'+cls+'"></div>';
+  }).join("");
+  nav.innerHTML='<div class="score-bar">'+dots+'</div><div style="font-size:13px;color:#888">'+answers.filter(Boolean).length+' goed van '+answers.length+'</div>';
+  area.appendChild(nav);
+}
+
+function renderMC(q){
+  var wrap=document.createElement("div");
+  wrap.className="mc-options";
+  q.opts.forEach(function(o,i){
+    var btn=document.createElement("button");
+    btn.className="mc-opt";btn.textContent=o;
+    btn.onclick=function(){answerMC(q,i,wrap,btn);};
+    wrap.appendChild(btn);
+  });
+  return wrap;
+}
+
+function answerMC(q,i,wrap,btn){
+  var correct=i===q.ans;
+  wrap.querySelectorAll(".mc-opt").forEach(function(b,j){
+    b.disabled=true;
+    if(j===q.ans) b.classList.add("correct");
+    else if(b===btn&&!correct) b.classList.add("wrong");
+  });
+  var fb=document.createElement("div");
+  fb.className="feedback "+(correct?"ok":"nok");
+  fb.textContent=(correct?"Goed! ":"Helaas. ")+q.fb;
+  wrap.parentElement.appendChild(fb);
+  answers.push(correct);
+  setTimeout(function(){if(curQ<chapters[curCh].questions.length-1){curQ++;renderQ();}else showScore();},1800);
+}
+
+function renderDrag(q){
+  var wrap=document.createElement("div");
+  dragState={placed:{}};
+  var bank=document.createElement("div");
+  bank.className="drag-bank";
+  q.items.forEach(function(item,i){
+    var chip=document.createElement("div");
+    chip.className="chip";chip.textContent=item.label;chip.dataset.i=i;
+    chip.draggable=true;
+    chip.addEventListener("dragstart",function(e){e.dataTransfer.setData("text",i);});
+    bank.appendChild(chip);
+  });
+  wrap.appendChild(bank);
+  var cols=document.createElement("div");
+  cols.className="drag-cols";
+  q.cats.forEach(function(cat,ci){
+    var col=document.createElement("div");
+    col.innerHTML='<div class="drag-col-label">'+cat+'</div>';
+    var zone=document.createElement("div");
+    zone.className="drag-target";zone.dataset.cat=ci;
+    zone.addEventListener("dragover",function(e){e.preventDefault();zone.classList.add("over");});
+    zone.addEventListener("dragleave",function(){zone.classList.remove("over");});
+    zone.addEventListener("drop",function(e){
+      e.preventDefault();zone.classList.remove("over");
+      var i=parseInt(e.dataTransfer.getData("text"));
+      var chip=document.querySelector(".chip[data-i='"+i+"']");
+      if(!chip||chip.classList.contains("placed")) return;
+      chip.classList.add("placed");
+      var clone=chip.cloneNode(true);clone.draggable=false;clone.classList.remove("placed");clone.style.cursor="default";
+      zone.appendChild(clone);
+      dragState.placed[i]=ci;
+      if(Object.keys(dragState.placed).length===q.items.length) checkDrag(q,cols,wrap);
+    });
+    col.appendChild(zone);cols.appendChild(col);
+  });
+  wrap.appendChild(cols);
+  return wrap;
+}
+
+function checkDrag(q,cols,wrap){
+  var ok=true;
+  q.items.forEach(function(item,i){if(dragState.placed[i]!==item.cat) ok=false;});
+  cols.querySelectorAll(".drag-target").forEach(function(z,ci){
+    var allOk=true;
+    z.querySelectorAll(".chip").forEach(function(c){
+      if(q.items[parseInt(c.dataset.i)].cat!==ci) allOk=false;
+    });
+    z.classList.add(allOk?"correct":"wrong");
+  });
+  var fb=document.createElement("div");
+  fb.className="feedback "+(ok?"ok":"nok");
+  fb.textContent=(ok?"Helemaal goed! ":"Niet helemaal. ")+q.fb;
+  wrap.appendChild(fb);
+  answers.push(ok);
+  setTimeout(function(){if(curQ<chapters[curCh].questions.length-1){curQ++;renderQ();}else showScore();},2200);
+}
+
+function showScore(){
+  var good=answers.filter(Boolean).length,total=answers.length;
+  var pct=Math.round(good/total*100);
+  document.getElementById("prog").style.width="100%";
+  var msg=pct>=80?"Uitstekend!":pct>=60?"Goed bezig, nog even oefenen.":"Er is nog wat te herhalen.";
+  var area=document.getElementById("quiz-area");
+  area.innerHTML='<div class="score-card"><div class="score-big">'+good+'/'+total+'</div><div class="score-sub">'+pct+'% goed — '+msg+'</div><div class="btn-row"><button class="action" onclick="startChapter('+curCh+')">Opnieuw proberen</button><button class="action" onclick="document.querySelectorAll(\'.ch-btn\').forEach(function(b){b.classList.remove(\'active\')});document.getElementById(\'quiz-area\').innerHTML=\'\'">Ander hoofdstuk</button></div></div>';
+}
+</script>
+</body>
+</html>
