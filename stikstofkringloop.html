@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stikstofkringloop — interactief</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; font-size: 13px; background: #fff; padding: 10px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .btn {
+    padding: 5px 14px; border-radius: 6px;
+    border: 1px solid #ccc; background: transparent;
+    font-size: 12px; cursor: pointer; font-family: inherit; color: #222;
+  }
+  .btn:hover { background: #f0f0f0; }
+  .btn.active { background: #1F6B3A; color: #fff; border-color: #1F6B3A; }
+  .step-lbl { font-size: 12px; color: #555; }
+
+  /* Afbeelding + overlay container */
+  .img-wrap {
+    position: relative; display: inline-block;
+    width: 100%; max-width: 860px;
+  }
+  .img-wrap img { width: 100%; display: block; }
+
+  /* Klikbare zones */
+  .zone {
+    position: absolute; cursor: pointer;
+    border-radius: 6px;
+    background: rgba(0,0,0,0);
+    border: 2px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .zone:hover {
+    background: rgba(31,107,58,0.18);
+    border-color: rgba(31,107,58,0.5);
+  }
+  .zone.active-zone {
+    background: rgba(31,107,58,0.15);
+    border-color: #1F6B3A;
+  }
+  .zone.dim {
+    opacity: 0.12;
+    pointer-events: none;
+  }
+
+  /* Infopaneel */
+  .info {
+    margin-top: 10px;
+    background: #f9f9f7;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px 14px;
+    min-height: 64px;
+    max-width: 860px;
+  }
+  .info-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #1a1a1a; }
+  .info-body  { font-size: 13px; color: #444; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <button class="btn active" id="btn-vrij"   onclick="setMode('vrij')">Vrij verkennen</button>
+  <button class="btn"        id="btn-opbouw" onclick="setMode('opbouw')">Opbouwen</button>
+  <span class="step-lbl" id="step-lbl" style="display:none"></span>
+  <button class="btn" id="btn-prev" onclick="prev()" style="display:none">← Vorige</button>
+  <button class="btn" id="btn-next" onclick="next()" style="display:none">Volgende →</button>
+</div>
+
+<div class="img-wrap" id="imgwrap">
+  <!--
+    Zorg dat stikstofkringloop.png in dezelfde map staat als dit HTML-bestand
+    (of pas het pad hieronder aan).
+  -->
+  <img id="binas" src="stikstofkringloop.png" alt="Stikstofkringloop Binas" />
+
+  <!--
+    Zones zijn opgegeven als percentage van de afbeeldingsbreedte/-hoogte.
+    Bronafbeelding: 963 × 1360 px.
+    Volgorde: left%, top%, width%, height%
+  -->
+
+  <!-- ===== STOFFEN ===== -->
+  <div class="zone" id="s-N2"
+    data-step="1"
+    data-title="N₂ — Stikstofgas"
+    data-body="Stikstofgas maakt 78% van de atmosfeer uit. Het is een stabiel molecuul dat door de meeste organismen niet direct bruikbaar is. Alleen bepaalde bacteriën en fotochemische processen kunnen N₂ omzetten in bruikbare stikstofverbindingen."
+    style="left:34.3%;top:6.3%;width:17.1%;height:4.6%"></div>
+
+  <div class="zone" id="s-NOx"
+    data-step="2"
+    data-title="NOₓ — Stikstofoxiden"
+    data-body="Stikstofoxiden ontstaan door fotochemische stikstoffixatie: bliksem, verkeer, industrie en ozon zetten N₂ om in NOₓ. Via neerslag komen ze als nitraat (NO₃⁻) in de bodem. Dit draagt bij aan stikstofdepositie."
+    style="left:71.4%;top:20.3%;width:20.1%;height:8.2%"></div>
+
+  <div class="zone" id="s-NO3"
+    data-step="3"
+    data-title="NO₃⁻ — Nitraat"
+    data-body="Nitraat is de belangrijkste stikstofbron voor planten. Het wordt via de wortels opgenomen en door stikstofassimilatie ingebouwd als aminozuren, eiwitten, DNA en chlorofyl. Nitraat kan ook uitspoelen naar het grondwater (eutrofiëring)."
+    style="left:51.3%;top:27.7%;width:18.7%;height:7.4%"></div>
+
+  <div class="zone" id="s-NH3NH4"
+    data-step="4"
+    data-title="NH₃/NH₄⁺ — Ammoniak en ammonium"
+    data-body="Ammoniak (NH₃) en ammoniumionen (NH₄⁺) staan in chemisch evenwicht. Ze ontstaan bij stikstoffixatie of ammonificatie. NH₄⁺ wordt opgenomen door planten, maar kan ook uitspoelen naar grondwater of vervluchtigen als NH₃."
+    style="left:60.4%;top:36.4%;width:19.7%;height:4.4%"></div>
+
+  <div class="zone" id="s-NO2"
+    data-step="8"
+    data-title="NO₂⁻ — Nitriet"
+    data-body="Nitriet is een tussenproduct in de nitrificatie. Nitrietbacteriën (bijv. Nitrosomonas) zetten NH₄⁺ om in NO₂⁻; daarna zetten nitraatbacteriën (Nitrobacter) het om in NO₃⁻. Nitriet is giftig voor veel organismen."
+    style="left:2.1%;top:40.1%;width:16.6%;height:8.2%"></div>
+
+  <div class="zone" id="s-NH4"
+    data-step="9"
+    data-title="NH₄⁺ — Ammoniumionen"
+    data-body="Ammoniumionen worden gevormd bij ammonificatie van organisch materiaal. Nitrietbacteriën kunnen NH₄⁺ omzetten in nitriet (nitrificatie). NH₄⁺ kan ook uitspoelen of vervluchtigen als NH₃."
+    style="left:26.6%;top:48.7%;width:21.8%;height:7.4%"></div>
+
+  <div class="zone" id="s-Nprod"
+    data-step="5"
+    data-title="N-bevattende organische stoffen (producenten)"
+    data-body="Planten (producenten) nemen anorganische stikstof op — NO₃⁻ of NH₄⁺ — en bouwen die via stikstofassimilatie in als aminozuren, eiwitten, DNA en chlorofyl."
+    style="left:56.1%;top:46.3%;width:24.9%;height:8.8%"></div>
+
+  <div class="zone" id="s-Ncons"
+    data-step="6"
+    data-title="N-bevattende organische stoffen (consumenten)"
+    data-body="Dieren (consumenten) verkrijgen stikstof door het eten van planten of andere dieren. Via vertering worden eiwitten afgebroken tot aminozuren; voortgezette assimilatie bouwt lichaamseigen eiwitten op."
+    style="left:69.8%;top:61.6%;width:23.9%;height:8.7%"></div>
+
+  <div class="zone" id="s-Nbact"
+    data-step="11"
+    data-title="N-bevattende organische stoffen (bacteriën)"
+    data-body="Rottingsbacteriën (reducenten) breken dood organisch materiaal af. Daarbij komen aminozuren vrij die worden omgezet in ammoniak via ammonificatie. Dit is de terugkoppeling van organisch naar anorganisch stikstof."
+    style="left:51.3%;top:69.9%;width:24.9%;height:8.2%"></div>
+
+  <div class="zone" id="s-NH3"
+    data-step="12"
+    data-title="NH₃ — Ammoniak"
+    data-body="Ammoniak ontstaat bij ammonificatie. Het staat in evenwicht met NH₄⁺. NH₃ kan vervluchtigen naar de atmosfeer en draagt bij aan stikstofdepositie wanneer het neerslaat op ecosystemen."
+    style="left:24.5%;top:68.2%;width:19.7%;height:7.4%"></div>
+
+  <div class="zone" id="s-ureum"
+    data-step="13"
+    data-title="Ureum / Urinezuur"
+    data-body="Dieren scheiden stikstofafval uit als ureum (zoogdieren) of urinezuur (vogels, reptielen). Urobacteriën zetten dit via ammonificatie om in ammoniak."
+    style="left:46.5%;top:84.4%;width:20.1%;height:5.9%"></div>
+
+  <!-- ===== PROCESSEN ===== -->
+  <div class="zone" id="p-fotofix"
+    data-step="2"
+    data-title="Fotochemische stikstoffixatie"
+    data-body="Bliksem, verkeer, industrie en ozon zetten N₂ om in stikstofoxiden (NOₓ). Via neerslag komt salpeterzuur als nitraat in de bodem. Dit draagt bij aan stikstofdepositie."
+    style="left:64.0%;top:11.0%;width:28.0%;height:9.6%"></div>
+
+  <div class="zone" id="p-bactfix"
+    data-step="3"
+    data-title="Bacteriële stikstoffixatie"
+    data-body="Stikstofbacteriën (Azotobacter), cyanobacteriën en knolletjesbacteriën (Rhizobium, in symbiose met vlinderbloemigen) zetten N₂ om in NH₄⁺. Bij knolletjesbacteriën gaat een deel direct naar de gastheerplant."
+    style="left:49.6%;top:10.3%;width:19.7%;height:14.7%"></div>
+
+  <div class="zone" id="p-denit"
+    data-step="7"
+    data-title="Denitrificatie"
+    data-body="Anaerobe denitrificerende bacteriën (bijv. Pseudomonas) zetten nitraat (NO₃⁻) om in stikstofgas (N₂). Dit vindt plaats bij zuurstofgebrek, zoals diep in de bodem of in waterbodems. Het is de terugroute van gebonden stikstof naar de atmosfeer."
+    style="left:26.6%;top:22.8%;width:20.8%;height:8.8%"></div>
+
+  <div class="zone" id="p-deammon"
+    data-step="10"
+    data-title="Deammonificatie (anammox)"
+    data-body="Anaerobe deammonificerende bacteriën (anammox-bacteriën) zetten NH₄⁺ samen met NO₂⁻ om in N₂. Dit is een relatief recent ontdekte route en wordt toegepast in afvalwaterzuivering."
+    style="left:0%;top:30.6%;width:20.1%;height:9.4%"></div>
+
+  <div class="zone" id="p-nitrif1"
+    data-step="9"
+    data-title="Nitrificatie: NH₄⁺ → NO₂⁻"
+    data-body="Nitrietbacteriën (bijv. Nitrosomonas) oxideren ammonium (NH₄⁺) aeroob tot nitriet (NO₂⁻). Dit is de eerste stap van nitrificatie en levert energie voor de bacteriën (chemo-autotrofie)."
+    style="left:6.2%;top:52.9%;width:22.8%;height:5.9%"></div>
+
+  <div class="zone" id="p-nitrif2"
+    data-step="8"
+    data-title="Nitrificatie: NO₂⁻ → NO₃⁻"
+    data-body="Nitraatbacteriën (bijv. Nitrobacter) oxideren nitriet (NO₂⁻) aeroob tot nitraat (NO₃⁻). Dit is de tweede stap van nitrificatie. Samen vormen de twee stappen de volledige nitrificatie: NH₄⁺ → NO₃⁻."
+    style="left:10.4%;top:29.3%;width:22.8%;height:5.9%"></div>
+
+  <div class="zone" id="p-assim"
+    data-step="5"
+    data-title="Stikstofassimilatie"
+    data-body="Planten nemen anorganische stikstof op (NO₃⁻ of NH₄⁺) en bouwen die via enzymatische reacties in als aminozuren, eiwitten, DNA en chlorofyl. Nitraat wordt eerst gereduceerd tot ammonium voordat het ingebouwd kan worden."
+    style="left:53.2%;top:39.6%;width:19.7%;height:7.4%"></div>
+
+  <div class="zone" id="p-vertering"
+    data-step="6"
+    data-title="Vertering en voortgezette assimilatie"
+    data-body="Dieren eten planten of andere dieren. Via vertering worden eiwitten afgebroken tot aminozuren. Voortgezette assimilatie bouwt deze in als lichaamseigen eiwitten. Niet verteerd materiaal komt terecht als feces."
+    style="left:69.8%;top:55.1%;width:23.9%;height:7.4%"></div>
+
+  <div class="zone" id="p-ammonif-rot"
+    data-step="11"
+    data-title="Ammonificatie (rottingsbacteriën)"
+    data-body="Rottingsbacteriën breken dood organisch materiaal af (bijv. dode planten, kadavers). Hierbij komen aminozuren vrij die worden omgezet in ammoniak (NH₃). Dit proces heet ammonificatie."
+    style="left:34.3%;top:65.1%;width:24.9%;height:5.9%"></div>
+
+  <div class="zone" id="p-dissim"
+    data-step="13"
+    data-title="Dissimilatie — eiwitafbraak"
+    data-body="Bij de afbraak van eiwitten (dissimilatie) worden aminogroepen omgezet in ureum (zoogdieren) of urinezuur (vogels, reptielen). Dit stikstofafval wordt uitgescheiden via de nieren."
+    style="left:72.0%;top:80.1%;width:19.7%;height:5.9%"></div>
+
+  <div class="zone" id="p-ammonif-ureo"
+    data-step="13"
+    data-title="Ammonificatie (urobacteriën)"
+    data-body="Urobacteriën (bijv. Bacillus pasteurii) produceren het enzym urease dat ureum (CO(NH₂)₂) afbreekt tot ammoniak en CO₂. Dit proces vindt snel plaats in bodems en mestopslagen."
+    style="left:29.1%;top:83.8%;width:22.8%;height:5.9%"></div>
+
+  <div class="zone" id="p-uitspoel"
+    data-step="3"
+    data-title="Uitspoeling (naar grondwater)"
+    data-body="Nitraat (NO₃⁻) is goed oplosbaar in water en kan gemakkelijk uitspoelen naar het grondwater. Dit leidt tot vermesting van grondwater en oppervlaktewater (eutrofiëring)."
+    style="left:74.1%;top:32.3%;width:18.7%;height:5.9%"></div>
+
+  <div class="zone" id="p-vervluch"
+    data-step="12"
+    data-title="Vervluchtiging (naar atmosfeer)"
+    data-body="Ammoniak (NH₃) kan vervluchtigen naar de atmosfeer vanuit mest, bemeste bodems of stallen. Via stikstofdepositie draagt het bij aan vermesting wanneer het neerslaat op ecosystemen."
+    style="left:0%;top:69.9%;width:16.6%;height:5.9%"></div>
+
+</div><!-- .img-wrap -->
+
+<div class="info" id="info-panel">
+  <div class="info-title" id="ititle">Klik op een stof of proces</div>
+  <div class="info-body"  id="ibody">Klik op een gekleurd vakje of proceslabel in de afbeelding voor uitleg.</div>
+</div>
+
+<script>
+const MAX_STEP = 13;
+const STAP_LABELS = {
+  0:  'Leeg schema — druk op Volgende',
+  1:  'Stap 1 — N₂ in de atmosfeer',
+  2:  'Stap 2 — Fotochemische stikstoffixatie en NOₓ',
+  3:  'Stap 3 — Bacteriële fixatie, nitraat en uitspoeling',
+  4:  'Stap 4 — NH₃/NH₄⁺',
+  5:  'Stap 5 — Stikstofassimilatie (planten)',
+  6:  'Stap 6 — Consumenten en vertering',
+  7:  'Stap 7 — Denitrificatie',
+  8:  'Stap 8 — Nitriet en nitrificatie',
+  9:  'Stap 9 — Ammoniumionen en nitrificatie',
+  10: 'Stap 10 — Deammonificatie',
+  11: 'Stap 11 — Rottingsbacteriën en ammonificatie',
+  12: 'Stap 12 — NH₃ en vervluchtiging',
+  13: 'Stap 13 — Ureum en dissimilatie'
+};
+
+let mode = 'vrij', cur = 0;
+const zones = Array.from(document.querySelectorAll('.zone'));
+
+// Koppel click-handlers
+zones.forEach(z => {
+  z.addEventListener('click', () => {
+    showInfo(z.dataset.title, z.dataset.body);
+    if (mode === 'vrij') {
+      zones.forEach(x => x.classList.remove('active-zone'));
+      z.classList.add('active-zone');
+    }
+  });
+});
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-vrij').classList.toggle('active', m === 'vrij');
+  document.getElementById('btn-opbouw').classList.toggle('active', m === 'opbouw');
+  const show = m === 'opbouw';
+  ['step-lbl','btn-prev','btn-next'].forEach(id => {
+    document.getElementById(id).style.display = show ? 'inline' : 'none';
+  });
+  if (m === 'vrij') {
+    zones.forEach(z => { z.classList.remove('dim','active-zone'); });
+    showInfo('Klik op een stof of proces', 'Klik op een gekleurd vakje of proceslabel in de afbeelding voor uitleg.');
+  } else {
+    cur = 0;
+    renderStep();
+  }
+}
+
+function renderStep() {
+  zones.forEach(z => {
+    const zStep = parseInt(z.dataset.step, 10);
+    if (zStep <= cur) {
+      z.classList.remove('dim');
+      z.classList.add('active-zone');
+    } else {
+      z.classList.remove('active-zone');
+      z.classList.add('dim');
+    }
+  });
+  const lbl = STAP_LABELS[cur] || '';
+  document.getElementById('step-lbl').textContent =
+    cur > 0 ? lbl + ' (' + cur + '/' + MAX_STEP + ')' : lbl;
+  showInfo('Klik op een stof of proces', 'Klik op een zichtbaar element voor uitleg.');
+}
+
+function next() { if (cur < MAX_STEP) { cur++; renderStep(); } }
+function prev() { if (cur > 0) { cur--; renderStep(); } }
+
+function showInfo(title, body) {
+  document.getElementById('ititle').textContent = title;
+  document.getElementById('ibody').textContent  = body;
+}
+</script>
+</body>
+</html>
